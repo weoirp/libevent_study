@@ -1,0 +1,62 @@
+#include <iostream>
+#include <event.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+int setnonblock(int fd)
+{
+	int flags;
+	flags = fcntl(fd, F_GETFL);
+	flags |= O_NONBLOCK;
+	fcntl(fd, F_SETFL, flags);
+}
+
+void eventcb(struct bufferevent *bev, short events, void *ptr)
+{
+	if (events & BEV_EVENT_CONNECTED)
+	{
+		/* code */
+	}
+	else if (events & BEV_EVENT_ERROR)
+	{
+		/* code */
+	}
+}
+
+int main_loop()
+{
+	struct event_base *base = event_base_new();
+
+	struct sockaddr_in sin;
+	
+	memset(&sin, 0, sizeof(sin));
+	sin.sin_family = AF_INET;
+	sin.sin_addr.s_addr = htonl(0x7f000001);
+	sin.sin_port = htons(8080);
+
+
+	struct bufferevent *bev = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);
+	bufferevent_setcb(bev, NULL, NULL, eventcb, NULL);
+
+	if (bufferevent_socket_connect(bev,
+		(struct sockaddr *)&sin,
+		sizeof(sin)) < 0)
+	{
+		bufferevent_free(bev);
+		event_base_free(base);
+		return -1;
+	}
+
+	event_base_dispatch(base);
+
+	event_base_free(base);
+}
+
+
+int main(int argc, char **argv)
+{
+	main_loop();
+}

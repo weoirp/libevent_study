@@ -19,7 +19,7 @@ void generic_request_handler(struct evhttp_request *req, void *arg)
 int main(int argc, char **argv)
 {
 	short http_port = 8081;
-	const char *http_addr = "127.0.0.1";
+	const char *http_addr = "172.16.101.21";
 	struct evhttp *http_server = NULL;
 
 	event_init();
