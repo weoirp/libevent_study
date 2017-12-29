@@ -75,22 +75,24 @@ static void listener_cb(struct evconnlistener *listener, evutil_socket_t fd,
 	bufferevent_enable(bev, EV_WRITE | EV_READ);
 
 	printf("sb. connected!!!\n");
-	bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
+	// bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
 }
 
 static void conn_readcb(struct bufferevent *bev, void *user_data)
 {
 	printf("read ---------------- cb\n");
+	struct evbuffer *input = bufferevent_get_input(bev);
+	char buf[1024];
+	int n;
+	while((n = evbuffer_remove(input, buf, sizeof(buf))) > 0) {
+	    fwrite(buf, 1, n, stdout);
+	}
+	bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
 }
 
 static void conn_writecb(struct bufferevent *bev, void *user_data)
 {
 	printf("write --------------- cb\n");
-	struct evbuffer *output = bufferevent_get_output(bev);
-	if (evbuffer_get_length(output) == 0)
-	{
-		printf("flushed answer\n");
-	}
 }
 
 static void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
@@ -100,16 +102,19 @@ static void conn_eventcb(struct bufferevent *bev, short events, void *user_data)
 	{
 		printf("connected event.....\n");
 	}
-	else if (events & BEV_EVENT_EOF)
+	else
 	{
-		printf("Connection closed. \n");
-	}
-	else if (events & BEV_EVENT_ERROR)
-	{
-		printf("Got an error on the connection: %s\n", strerror(errno));
-	}
+		if (events & BEV_EVENT_EOF)
+		{
+			printf("Connection closed. \n");
+		}
+		else if (events & BEV_EVENT_ERROR)
+		{
+			printf("Got an error on the connection: %s\n", strerror(errno));
+		}
+		bufferevent_free(bev);		
+	} 
 
-	bufferevent_free(bev);
 }
 
 static void signal_cb(evutil_socket_t sig,  short events, void *user_data)
